@@ -576,7 +576,8 @@ async function blobToWavBase64(blob) {
     const durationSec = Math.max(1, Math.round(audioBuffer.duration));
 
     return {
-        data: base64Data,
+        // qwen3-omni 兼容模式要求 data URL 前缀 data:;base64,
+        data: `data:audio/wav;base64,${base64Data}`,
         format: 'wav',
         durationSec: durationSec
     };

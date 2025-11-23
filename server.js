@@ -42,10 +42,13 @@ app.post('/api/chat', async (req, res) => {
         }
 
         if (audioData && audioData.data) {
+            const dataStr = audioData.data.startsWith('data:')
+                ? audioData.data
+                : `data:audio/${audioData.format || 'wav'};base64,${audioData.data}`;
             contentBlocks.push({
                 type: 'input_audio',
                 input_audio: {
-                    data: audioData.data,
+                    data: dataStr,
                     // 默认使用 wav；前端会按录音格式传递
                     format: audioData.format || 'wav'
                 }

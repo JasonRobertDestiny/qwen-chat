@@ -59,8 +59,11 @@
 
                     <!-- 图片上传按钮 -->
                     <button id="uploadBtn" class="action-btn upload-btn" title="选择图片">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <!-- 云上传图标，替换原素材 -->
+                            <path d="M6.5 19a4.5 4.5 0 0 1-.47-8.97A6 6 0 0 1 17.7 7.8 4.8 4.8 0 0 1 18.5 17H6.5z"/>
+                            <path d="M12 13.5 9.2 16.3a1 1 0 1 1-1.4-1.4l4-4a1 1 0 0 1 1.4 0l4 4a1 1 0 0 1-1.4 1.4L12 13.5z"/>
+                            <path d="M12 13.5V20a1 1 0 1 1-2 0v-6.5a1 1 0 1 1 2 0z"/>
                         </svg>
                     </button>
                     <input type="file" id="imageUpload" accept="image/*" style="display: none;">
