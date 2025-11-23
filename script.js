@@ -150,9 +150,12 @@ function showMessage(content, sender, imageData = null, useTypingEffect = false)
 
     // 使用打字机效果（仅AI回复）
     if (useTypingEffect && sender === 'bot') {
-        typeWriter(messageText, content, 0, 30); // 30ms每字
+        // 将换行转换为HTML，支持段落格式
+        const htmlContent = content.replace(/\n/g, '<br>');
+        typeWriterHTML(messageText, htmlContent, 0, 30); // 30ms每字
     } else {
-        messageText.textContent = content;
+        // 普通消息也支持换行
+        messageText.innerHTML = content.replace(/\n/g, '<br>');
     }
 
     // 滚动到底部
@@ -161,7 +164,7 @@ function showMessage(content, sender, imageData = null, useTypingEffect = false)
     return messageDiv;
 }
 
-// 打字机效果
+// 打字机效果（纯文本）
 function typeWriter(element, text, index, speed) {
     if (index < text.length) {
         element.textContent += text.charAt(index);
@@ -171,6 +174,47 @@ function typeWriter(element, text, index, speed) {
 
         setTimeout(() => typeWriter(element, text, index + 1, speed), speed);
     }
+}
+
+// 打字机效果（支持HTML）
+function typeWriterHTML(element, htmlText, index, speed) {
+    // 创建临时 div 来解析 HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlText;
+
+    // 获取文本内容（包含换行）
+    const textContent = tempDiv.innerText || tempDiv.textContent;
+
+    // 逐字显示，遇到换行时插入 <br>
+    let currentHTML = '';
+    let textIndex = 0;
+
+    function addNextChar() {
+        if (textIndex < textContent.length) {
+            const char = textContent.charAt(textIndex);
+
+            if (char === '\n') {
+                currentHTML += '<br>';
+            } else {
+                // 转义 HTML 特殊字符
+                const escapedChar = char
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                currentHTML += escapedChar;
+            }
+
+            element.innerHTML = currentHTML;
+
+            // 自动滚动到底部
+            elements.messages.scrollTop = elements.messages.scrollHeight;
+
+            textIndex++;
+            setTimeout(addNextChar, speed);
+        }
+    }
+
+    addNextChar();
 }
 
 // API 调用

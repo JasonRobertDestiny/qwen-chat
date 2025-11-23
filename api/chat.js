@@ -101,12 +101,20 @@ export default async function handler(req, res) {
         // 解析OpenAI兼容格式响应
         if (data.choices && data.choices[0]) {
             const replyContent = data.choices[0].message.content;
-            const normalizedReply = Array.isArray(replyContent)
-                ? replyContent
+
+            // 处理数组或字符串格式的内容
+            let normalizedReply;
+            if (Array.isArray(replyContent)) {
+                normalizedReply = replyContent
                     .filter(item => item && (item.text || item.content))
                     .map(item => item.text || item.content)
-                    .join('')
-                : replyContent;
+                    .join('');
+            } else {
+                normalizedReply = replyContent;
+            }
+
+            // 清理和格式化文本
+            normalizedReply = cleanText(normalizedReply);
 
             return res.json({
                 success: true,
@@ -127,4 +135,21 @@ export default async function handler(req, res) {
             message: error.message
         });
     }
+}
+
+// 文本清理函数
+function cleanText(text) {
+    if (!text) return '';
+
+    return text
+        // 移除多余的连续空格（保留单个空格）
+        .replace(/ {2,}/g, ' ')
+        // 移除行首行尾空格
+        .split('\n')
+        .map(line => line.trim())
+        .join('\n')
+        // 移除3个以上的连续换行，保留最多2个（段落间隔）
+        .replace(/\n{3,}/g, '\n\n')
+        // 移除首尾空白
+        .trim();
 }
