@@ -1,6 +1,7 @@
 /**
  * Vercel Serverless Function - 通义千问API代理
  * 用于Vercel部署，解决CORS和API密钥安全问题
+ * 支持文本、图片、音频多模态输入
  */
 
 export default async function handler(req, res) {
@@ -19,75 +20,76 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { message, imageData } = req.body;
+        const { message, imageData, audioData } = req.body;
 
-        if (!message && !imageData) {
-            return res.status(400).json({
-                success: false,
-                error: '请提供消息或图片'
+        // 构建内容块
+        const contentBlocks = [];
+
+        if (message) {
+            contentBlocks.push({ type: 'text', text: message });
+        }
+
+        if (imageData) {
+            contentBlocks.push({
+                type: 'image_url',
+                image_url: { url: imageData }
             });
+        }
+
+        if (audioData && audioData.data) {
+            // 确保音频数据有正确的前缀
+            const dataStr = audioData.data.startsWith('data:')
+                ? audioData.data
+                : `data:audio/${audioData.format || 'wav'};base64,${audioData.data}`;
+
+            contentBlocks.push({
+                type: 'input_audio',
+                input_audio: {
+                    data: dataStr,
+                    format: audioData.format || 'wav'
+                }
+            });
+        }
+
+        if (!contentBlocks.length) {
+            return res.status(400).json({ error: '缺少可用的输入内容' });
         }
 
         // API配置 - 从环境变量读取
         const API_KEY = process.env.QWEN_API_KEY || 'sk-5eca33a68f2d499fa09953b9b308ed0f';
-        const API_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
-        const MODEL = 'qwen-vl-plus'; // 视觉模型，支持图片分析
+        const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+        const MODEL = 'qwen3-omni-flash'; // 全模态极速版
 
-        // 构建消息内容
-        let content;
-        if (imageData) {
-            // 有图片时使用多模态格式
-            content = [
-                {
-                    type: 'text',
-                    text: message || '请分析这张图片'
-                },
-                {
-                    type: 'image_url',
-                    image_url: {
-                        url: imageData
-                    }
-                }
-            ];
-        } else {
-            // 纯文本
-            content = message;
-        }
-
-        // 构建请求体
+        // 构建请求体（OpenAI兼容格式）
         const requestBody = {
             model: MODEL,
-            input: {
-                messages: [
-                    {
-                        role: 'user',
-                        content: content
-                    }
-                ]
-            },
-            parameters: {
-                result_format: 'message'
-            }
+            messages: [
+                {
+                    role: 'user',
+                    content: contentBlocks
+                }
+            ],
+            stream: false
         };
 
-        console.log('调用通义千问API...', { model: MODEL, hasImage: !!imageData });
+        console.log('调用通义千问API...', JSON.stringify(requestBody).slice(0, 500));
 
         // 调用通义千问API
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`,
-                'X-DashScope-SSE': 'disable'
+                'Authorization': `Bearer ${API_KEY}`
             },
             body: JSON.stringify(requestBody)
         });
 
+        console.log('API响应状态:', response.status);
+
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('API错误:', response.status, errorText);
+            console.error('API错误:', errorText);
             return res.status(response.status).json({
-                success: false,
                 error: `API请求失败: ${response.status}`,
                 details: errorText
             });
@@ -96,30 +98,31 @@ export default async function handler(req, res) {
         const data = await response.json();
         console.log('API响应:', data);
 
-        // 解析响应
-        if (data.output && data.output.choices && data.output.choices[0]) {
-            return res.status(200).json({
+        // 解析OpenAI兼容格式响应
+        if (data.choices && data.choices[0]) {
+            const replyContent = data.choices[0].message.content;
+            const normalizedReply = Array.isArray(replyContent)
+                ? replyContent
+                    .filter(item => item && (item.text || item.content))
+                    .map(item => item.text || item.content)
+                    .join('')
+                : replyContent;
+
+            return res.json({
                 success: true,
-                message: data.output.choices[0].message.content
-            });
-        } else if (data.output && data.output.text) {
-            return res.status(200).json({
-                success: true,
-                message: data.output.text
-            });
-        } else {
-            console.error('未知响应格式:', data);
-            return res.status(500).json({
-                success: false,
-                error: '未知的API响应格式',
-                data: data
+                message: normalizedReply
             });
         }
+
+        console.error('未知响应格式:', data);
+        return res.status(500).json({
+            error: '未知的API响应格式',
+            data: data
+        });
 
     } catch (error) {
         console.error('服务器错误:', error);
         return res.status(500).json({
-            success: false,
             error: '服务器内部错误',
             message: error.message
         });
