@@ -16,9 +16,28 @@
 
 ## 🚀 快速部署（推荐）
 
-### 一键部署到 Vercel
+### 部署到 Cloudflare Pages（国内访问推荐）⭐
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/JasonRobertDestiny/qwen-chat-assistant)
+**优势**: 完全免费 + 国内访问稳定 + 无限流量
+
+详细步骤见：[CLOUDFLARE_DEPLOY.md](CLOUDFLARE_DEPLOY.md)
+
+**快速开始**：
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. Workers & Pages → Create → Pages → Connect to Git
+3. 选择 `qwen-chat` 仓库
+4. 设置环境变量 `QWEN_API_KEY`
+5. Deploy - 获得 `.pages.dev` 域名
+
+**国内访问对比**：
+- Cloudflare Pages (`.pages.dev`): ⭐⭐⭐⭐ 稳定
+- Vercel (`.vercel.app`): ⭐⭐ 不稳定
+
+---
+
+### 部署到 Vercel（国际访问）
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/JasonRobertDestiny/qwen-chat)
 
 部署步骤：
 
@@ -31,16 +50,7 @@
 5. **点击 Deploy** 等待部署完成
 6. **访问你的应用** Vercel 会提供一个 `.vercel.app` 域名
 
-### 手动部署到 Vercel
-
-1. Fork 本仓库到你的 GitHub
-2. 登录 [Vercel](https://vercel.com)
-3. 点击 "Import Project"
-4. 选择你 Fork 的仓库
-5. 在 "Environment Variables" 中添加:
-   - Name: `QWEN_API_KEY`
-   - Value: `sk-your-api-key-here`
-6. 点击 Deploy
+**注意**: Vercel在国内访问可能不稳定，建议使用Cloudflare Pages或绑定自定义域名。
 
 ## 💻 本地运行
 

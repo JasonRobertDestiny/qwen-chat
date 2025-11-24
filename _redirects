@@ -1,0 +1,7 @@
+# Cloudflare Pages重定向和路由规则
+
+# API路由 - 保持不变，由Functions处理
+/api/* /api/:splat 200
+
+# 所有其他路由指向index.html（SPA路由）
+/* /index.html 200
